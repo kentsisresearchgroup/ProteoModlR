@@ -124,7 +124,7 @@ Normalyze <- function(data, iso.norm = "", internal.norm = "", ref.state = "", m
     data$Condition = factor(data$Condition, levels=levels)
     data = data[order(data$Condition),]
     
-    data.n = ldply(unique(data$EntryID), function(i){
+    data = ldply(unique(data$EntryID), function(i){
       temp<- subset(data, EntryID==i)
       intensity = sapply(1:nrow(temp), function(k){
         intensity = temp$Intensity[k]/ temp$Intensity[1]
