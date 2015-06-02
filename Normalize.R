@@ -3,7 +3,7 @@ source("QC.R")
 
 # setwd("Z:././04_projects/Quantitative_Modeling//ProteoModlr")
 #data <- read.csv("Emandel_input", sep=',', header=T, na.strings=" ")
-data <- read.csv("molten_filtered_ 2015-05-27_19_55_08", sep=',', header=T)
+#data <- read.csv("molten_filtered_ 2015-05-27_19_55_08", sep=',', header=T)
 ###################################################################################
 ################################ NORMALIZATION ####################################
 # Normalyze takes in the data along with 3 options. If no options are chosen, data
@@ -135,7 +135,13 @@ Normalyze <- function(data, iso.norm = "", internal.norm = "", ref.state = "", m
       return(temp) 
     }, .progress = "text") 
   }
+  data$X = NULL
   
+  # Save file 
+  t<- Sys.time()
+  t=gsub(" ", "_", t)
+  t=gsub(":", "_", t)
+  write.csv(data, paste("Normalized_", t))
   
   return (data)
 

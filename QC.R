@@ -137,8 +137,10 @@ QC <- function(data, mod="", skyline=T, MaxQuant=F){
           if(any("Unmodified"==temp2$Modification)){
             temp2[which(temp2$Modification=="Unmodified"),"Modification"]="U"
             temp2[,"Stoichiometry"] = "Exact"
-            temp2[1,(6:(length(data)-2))] = colSums(temp2[,(6:(length(data)-2))])
-            return(as.data.frame(temp2[1,]))
+            temp3 <- subset(temp2, Modification!="U")
+            temp3[1,(6:(length(data)-2))] = colSums(temp2[,(6:(length(data)-2))])
+            temp4 = rbind(temp2[which(temp2$Modification=="U"), ], temp3[1,])
+            return(as.data.frame(temp4))
             # Otherwise, return as is (they are used as modified) and label stoichiometry
             # and abundance as approximate 
           } else {
