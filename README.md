@@ -6,20 +6,16 @@ R Suite for Quantitative Proteomics Pathway Modeling.
 Overview of pipeline
 --------------------
 
-ProteoModlR is a R suite for analysis of quantitative mass spectrometry proteomics data, specifically designed to investigate variation in expression and post-translational modifications in biological pathway-centric manner. The program requires a tabular format input file that includes unique protein identifiers, corresponding peptide sequences with annotated chemical modifications, and abundance values, such as extraction ion currents and chromatographic peak alignments. Biologic pathway annotation is specified by an accompanying file that includes either user-specified pathways of interest, or publically available annotations such as the NCI Pathway Interaction Database. After basic quality control and normalization (if applicable), the data is analyzed for differential abundance and site occupancy of the various modifications, providing functional insight into pathway activity and regulation. 
-
-Online documentation
---------------------
-Pending.
+ProteoModlR is an open-sourced R suite for quantitative analysis of the relative concentration of proteins and the stoichiometry of post-translational chemical modifications. Due to its modular design and flexible analysis pipeline, ProteoModlR allows for seamless integration with existing proteomics software, such as MaxQuant and Skyline, as well as with statistical and pathway analysis tools. It facilitates analysis and visualization of quantitative proteomics data enabling researchers with minimal experience with quantitative mass spectrometry to assess differential activation of functional cellular processes. 
 
 Manifest
 --------
 
-QC.R - Script for format verification and parameter initialization. 
+QC.R - Script for format verification and data classification
 
-Kinetics.R - main code; dependent on QC.R.
+Normalize.R - Script for data normalization
 
-Stats.R - statistical analysis; dependent on MSstats.R
+Analyze.R - Script for calculating abundance and stoichiometry
 
 Installation
 ------------
@@ -31,8 +27,7 @@ From source:
 Dependencies
 ------------
 
-* R/Bioconductor version 3.0.2 - source("http://bioconductor.org/biocLite.R")
-* MSstats - http://msstats.org/
+'reshape2', 'plyr, and 'ggplot2' from CRAN
 
 Authors
 -------
