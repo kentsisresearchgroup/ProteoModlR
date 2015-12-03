@@ -1,47 +1,51 @@
 library(ggplot2)
 source("QC.R")
 
-# setwd("Z:././04_projects/Quantitative_Modeling//ProteoModlr")
-#data <- read.csv("Emandel_input", sep=',', header=T, na.strings=" ")
-#data <- read.csv("molten_filtered_ 2015-05-27_19_55_08", sep=',', header=T)
+
 ###################################################################################
 ################################ NORMALIZATION ####################################
 # Normalyze takes in the data along with 3 options. If no options are chosen, data
 # is returned unchanged. If the normalyzation step is carried out, the normalized
-# intensity values replace the raw intensity values in the Intensit column.
+# intensity values replace the raw intensity values in the Intensity column.
 # iso.norm takes in a character string corresponding to the reference isotopologue
 # to which the other isotopologue will be normalized. internal.norm takes in a 
 # vector of character strings corresponding to the peptide sequence of the 
 # reference peptides to which other peptides are normalized. If more than one
-# reference peptide is indicated, an arithmetic mean is take. ref.state takes in
-# a character sting indicating the reference condition to which the intensity of the other conditions will be 
-# normalyzed. 
+# reference peptide is indicated, an arithmetic mean is taken. tot.current takes in 
+# a boolean input indicating whether or not normalization to total current should
+# be made. 
 
-Normalyze <- function(data, iso.norm = "", internal.norm = "", ref.state = "", mod="phospho", skyline=F, MaxQuant=T){
+Normalize <- function(data, iso.norm , internal.norm , tot.current, mod){
 
-  data <- QC(data, mod, skyline, MaxQuant) # Send data to QC function 
+  data <- QC(data, mod) # Send data to QC function 
   
   ########################## NORMALYZING BY AN ISOTOPOLOGUE ######################
-  if(nchar(iso.norm) != 0){ 
+  if(sum(is.na(iso.norm)) == 0){ 
     # Check to see if there are 2 labels 
     if(length(unique(data$Label))==1){
       stop(message("Only one isotopologue found. Data must contain two isotopologues 
                    in the Label column for this type of normalization. \n"))
     }
-    ref = iso.norm #reference isotope
+    exp = iso.norm[1] #non-ref isotope
+    ref = iso.norm[2] #reference isotope
+
     
     if(any(data$Label==ref)==F){
       stop(message("Reference isotope not found in the Label column of data. 
                    Match spelling and case to format used in data. \n"))
     }
     
-    exp = unique(data$Label)[-which(match(unique(data$Label),ref)==1)][1] #non-ref isotope
+    if(any(data$Label==exp)==F){
+      stop(message("Non-reference isotope not found in the Label column of data. 
+                   Match spelling and case to format used in data. \n"))
+    }
     
-    #Normalize heavy to light
+    
+    #Normalize to reference
     data$Label = factor(data$Label, levels=c(exp, ref))
     data = data[order(data$Label),]
     #EntryID is a unique identifier of each isotopologue for each peptide
-    data$EntryID = paste(data$Protein,data$Peptide,data$Modification,data$Condition,data$PatientID,data$Run,sep = "_")
+    data$EntryID = paste(data$Protein,data$Peptide,data$Pathway,data$Modification,data$Position,data$PatientID,data$Run,sep = "_")
     
     ratios=sapply(unique(data$EntryID), function(i) {
       ind=grep(i,data$EntryID)
@@ -52,13 +56,13 @@ Normalyze <- function(data, iso.norm = "", internal.norm = "", ref.state = "", m
       })    
     
     # Cut data in half (leaving out one isotopologue) and store normalized intensities
-    data=data[,(1:(0.5*length(data)))]
+    data=data[(1:(0.5*(dim(data)[1]))),]
     data$Intensity = ratios
   }
   
   #################### NORMALYZING BY AN INTERNAL REFERENCE ######################
   
-  if(length(internal.norm) != 0){
+  if(sum(is.na(internal.norm)) == 0){
     
       # Check to see if reference peptides exist. Retain only those that do. 
       ref = sapply(internal.norm, function(i){
@@ -79,9 +83,12 @@ Normalyze <- function(data, iso.norm = "", internal.norm = "", ref.state = "", m
     data$Condition = factor(data$Condition)
     data=data[order(data$Condition),]
     ref.df <- ldply(ref, function(i){
-      if(length(which(data[grep(i, data$Peptide),]$Intensity==0))==0)
-      ref.df=data[grep(i, data$Peptide),]
+      # if(length(which(data[grep(i, data$Peptide),]$Intensity==0))==0)
+      ref.df=data[which(data$Peptide==i),]
       ref.df = ref.df[order(ref.df$Condition),]
+      if(length(unique(ref.df$Condition))<length(unique(data$Condition))){
+        stop(message("Reference peptides must be measured under all conditions. \n"))
+      }
       ggplot(ref.df, aes(x=Condition,y=Intensity))+
         geom_boxplot()+ ggtitle(paste("Intensity of reference peptide ", i))+ 
         theme(plot.title = element_text(lineheight=.8, face="bold")) +
@@ -107,36 +114,19 @@ Normalyze <- function(data, iso.norm = "", internal.norm = "", ref.state = "", m
     
   }
     
-  #################### NORMALYZING BY AN REFERENCE STATE ######################  
+  #################### NORMALYZING BY TOTAL ION CURRENT ######################  
   
-  if(length(ref.state) != 0){
-    ref = ref.state
-    levels = c(ref, as.character(unique(data$Condition)[which(unique(data$Condition)!=ref)]))
-    
-    # Check for existence and validity of reference state (i.e. only one such state)
-    if(any(as.character(data$Condition)==ref)==F | length(ref)>1){
-      stop(message(sprintf("Invalid or non-existant reference state %s. \n", ref)))
-    }
-  
-    #EntryID is a unique identifier of each sample for each peptide
-    data$EntryID = paste(data$Protein,data$Peptide,data$Modification,data$PatientID,data$Run, sep = "_")
-    
-    data$Condition = factor(data$Condition, levels=levels)
-    data = data[order(data$Condition),]
-    
-    data = ldply(unique(data$EntryID), function(i){
-      temp<- subset(data, EntryID==i)
-      intensity = sapply(1:nrow(temp), function(k){
-        intensity = temp$Intensity[k]/ temp$Intensity[1]
-      })
-      
-      temp$Intensity=intensity
-      
-      return(temp) 
-    }, .progress = "text") 
+  if(tot.current==T){
+    # data$EntryID = paste(data$PatientID, data$Condition,  data$Label, data$Run,sep = "_")
+    data=ldply(unique(data$Run), function(i){
+      temp = subset(data, Run==i)
+      t.current = sum(na.omit(temp$Intensity))
+      temp$Intensity = temp$Intensity/as.numeric(t.current)
+      return(temp)
+    })  
   }
-  data$X = NULL
   
+
   # Save file 
   t<- Sys.time()
   t=gsub(" ", "_", t)

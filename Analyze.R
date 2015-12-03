@@ -2,8 +2,8 @@ library(ggplot2)
 library(reshape2)
 library(plyr)
 
-# setwd("Z:././04_projects/Quantitative_Modeling//ProteoModlr")
-data <- read.csv("molten_filtered_ 2015-05-28_21_35_56", sep=',', header=T)
+
+
 
 ########################## ABUNDANCE AND STOICHIOMETRY ##################################
 # Analyze.R calculates the approximate and/or exact site occupancy and/or abundance 
@@ -13,6 +13,7 @@ data <- read.csv("molten_filtered_ 2015-05-28_21_35_56", sep=',', header=T)
 # for all conditions are normalized to the reference state. 
 
 Analyze <- function(data, stoich, abund, ref.state){
+  data$X <- NULL
   data$log2FC.Abundance = NA
   data$Occupancy = NA 
   if(stoich=="Exact"){
@@ -39,7 +40,7 @@ Analyze <- function(data, stoich, abund, ref.state){
       }
       
       #EntryID is a unique identifier of each sample for each peptide
-      exact.mod$EntryID = paste(exact.mod$Protein,exact.mod$Peptide,exact.mod$Modification,exact.mod$PatientID,exact.mod$Run, sep = "_")
+      exact.mod$EntryID = paste(exact.mod$Protein,exact.mod$Peptide,exact.mod$Pathway,exact.mod$Modification,exact.mod$PatientID,exact.mod$Run, sep = "_")
       
       exact.mod$Condition = factor(exact.mod$Condition, levels=levels)
       
