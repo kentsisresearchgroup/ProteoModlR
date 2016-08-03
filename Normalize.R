@@ -15,7 +15,7 @@ source("QC.R")
 # a boolean input indicating whether or not normalization to total current should
 # be made. 
 
-Normalize <- function(data, iso.norm , internal.norm , tot.current, mod){
+Normalize <- function(data, iso.norm , equim.iso.norm, internal.norm , tot.current, mod){
 
   data <- QC(data, mod) # Send data to QC function 
   
@@ -26,8 +26,8 @@ Normalize <- function(data, iso.norm , internal.norm , tot.current, mod){
       stop(message("Only one isotopologue found. Data must contain two isotopologues 
                    in the Label column for this type of normalization. \n"))
     }
-    exp = iso.norm[1] #non-ref isotope
-    ref = iso.norm[2] #reference isotope
+    exp = as.character(unique(data$Label)[which(unique(data$Label)!=iso.norm)]) #non-ref isotope
+    ref = iso.norm #reference isotope
 
     
     if(any(data$Label==ref)==F){
@@ -45,20 +45,67 @@ Normalize <- function(data, iso.norm , internal.norm , tot.current, mod){
     data$Label = factor(data$Label, levels=c(exp, ref))
     data = data[order(data$Label),]
     #EntryID is a unique identifier of each isotopologue for each peptide
-    data$EntryID = paste(data$Protein,data$Peptide,data$Pathway,data$Modification,data$Position,data$PatientID,data$Run,sep = "_")
+    data$EntryID = paste(data$Protein,data$Peptide,data$Condition,sep = "_")
+
+    medians=ldply(unique(data$EntryID), function(i) {
+      ind=grep(i,data$EntryID)
+      median.int = median(data[ind,]$Intensity)
+      temp = data[ind,]
+      temp$Intensity=median.int*temp$Intensity[1:(0.5*nrow(temp))]/temp$Intensity[(0.5*nrow(temp)+1):nrow(temp)]
+      return(temp)
+    }, .progress="text")
+        
+
+     
+    # Cut data in half (leaving out one isotopologue) and store normalized intensities
+    data=medians[(1:(0.5*(dim(medians)[1]))),]
+
+  }
+  
+  ########################## NORMALYZING BY AN EQUIMOLAR ISOTOPOLOGUE ######################
+  if(sum(is.na(equim.iso.norm)) == 0){ 
+    # Check to see if there are 2 labels 
+    if(length(unique(data$Label))==1){
+      stop(message("Only one isotopologue found. Data must contain two isotopologues 
+                   in the Label column for this type of normalization. \n"))
+    }
+    exp = as.character(unique(data$Label)[which(unique(data$Label)!=equim.iso.norm)]) #non-ref isotope
+    ref = equim.iso.norm #reference isotope
     
+    
+    if(any(data$Label==ref)==F){
+      stop(message("Reference isotope not found in the Label column of data. 
+                   Match spelling and case to format used in data. \n"))
+    }
+    
+    if(any(data$Label==exp)==F){
+      stop(message("Non-reference isotope not found in the Label column of data. 
+                   Match spelling and case to format used in data. \n"))
+    }
+    
+    
+    #Normalize to reference
+    #Median Intensity of reference
+    data$Label = as.character(data$Label)
+    median.int = median(data[data$Label==ref,]$Intensity)
+    data$Label = factor(data$Label, levels=c(exp, ref))
+    data = data[order(data$Label),]
+    #EntryID is a unique identifier of each isotopologue for each peptide
+    data$EntryID = paste(data$Protein,data$Peptide,data$Modification,data$Condition,sep = "_")
+
     ratios=sapply(unique(data$EntryID), function(i) {
       ind=grep(i,data$EntryID)
       if(length(ind)!=2){
         stop(message(sprintf("EntryID %s missing a labeled or unlabeled state", ind)))
       }
-      ratio=data$Intensity[ind[1]]/data$Intensity[ind[2]]
+      ratio=median.int*data$Intensity[ind[1]]/data$Intensity[ind[2]]
       })    
     
     # Cut data in half (leaving out one isotopologue) and store normalized intensities
     data=data[(1:(0.5*(dim(data)[1]))),]
     data$Intensity = ratios
   }
+  
   
   #################### NORMALYZING BY AN INTERNAL REFERENCE ######################
   
@@ -117,13 +164,18 @@ Normalize <- function(data, iso.norm , internal.norm , tot.current, mod){
   #################### NORMALYZING BY TOTAL ION CURRENT ######################  
   
   if(tot.current==T){
-    # data$EntryID = paste(data$PatientID, data$Condition,  data$Label, data$Run,sep = "_")
-    data=ldply(unique(data$Run), function(i){
-      temp = subset(data, Run==i)
-      t.current = sum(na.omit(temp$Intensity))
-      temp$Intensity = temp$Intensity/as.numeric(t.current)
+    
+    data$EntryID = paste(data$Protein,data$Peptide,data$Label,sep = "_")
+    data$Condition = as.character(data$Condition)
+    tic=ldply(unique(data$Condition), function(i) {
+      temp = data[which(data$Condition==i),]
+      median.int = median(temp$Intensity)
+      temp$Intensity=median.int*temp$Intensity/sum(temp$Intensity)
       return(temp)
-    })  
+    }, .progress="text")
+    
+    data <- tic
+    
   }
   
 

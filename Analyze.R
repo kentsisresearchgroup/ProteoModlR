@@ -12,20 +12,20 @@ library(plyr)
 # done in QC.R. If a reference state is specified, stoichiometric ratios and abundances
 # for all conditions are normalized to the reference state. 
 
-Analyze <- function(data, stoich, abund, ref.state){
+Analyze <- function(data, mod, stoich, abund, ref.state){
   data$X <- NULL
   data$log2FC.Abundance = NA
   data$Occupancy = NA 
   if(stoich=="Exact"){
-    data$EntryID = paste(data$Protein,data$Peptide,data$Condition,data$PatientID,data$Run, sep = "_")
+    data$EntryID = paste(data$Protein,data$Condition, sep = "_")
+    data$Modification <- as.character(data$Modification)
     temp= subset(data, Stoichiometry=="Exact")
     exact.mod = ldply(unique(temp$EntryID), function(i){
       temp2 = subset(temp, EntryID==i)
-      stoich = temp2[which(temp2$Modification=="M"),]$Intensity / 
-        (temp2[which(temp2$Modification=="M"),]$Intensity+
-           temp2[which(temp2$Modification=="U"),]$Intensity)
-      temp2[which(temp2$Modification=="M"),]$Occupancy = stoich
-      return(temp2[which(temp2$Modification=="M"),])
+      stoich = temp2[which(temp2$Modification==mod),]$Intensity / 
+        sum(temp2$Intensity)
+      temp2[which(temp2$Modification==mod),]$Occupancy = stoich
+      return(temp2[which(temp2$Modification==mod),])
     }, .progress='text')
     rm(temp)
     
