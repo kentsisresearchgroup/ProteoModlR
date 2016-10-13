@@ -1,0 +1,11 @@
+Package: ProteoModlR
+Title: R Suite for Quantitative Proteomics Pathway Modeling
+Version: 0.1.1
+Authors@R: person("Alex", "Kentsis", email = "kentsisresearchgroup@gmail.com", role = c("aut", "cre"))
+Date: 2016
+Description: ProteoModlR is an open-sourced R suite for quantitative mass spectrometry analysis of the relative concentration of proteins and the stoichiometry of post-translational chemical modifications. Due to its modular design and flexible analysis pipeline, ProteoModlR allows for seamless integration with existing proteomics software, such as MaxQuant and Skyline, as well as with statistical and pathway analysis tools. It facilitates analysis and visualization of quantitative proteomics data enabling researchers to assess differential activation of functional cellular processes.
+Depends: R (>= 3.2.2),ggplot2,reshape2,plyr
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 5.0.1.9000
