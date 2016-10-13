@@ -25,9 +25,10 @@ Please refer to the PDF file on https://github.com/kentsisresearchgroup/ProteoMo
 Installation
 ------------
 
-From source:
-
-    git clone https://github.com/kentsisresearchgroup/ProteoModlR.git
+Enter the following commands directly into R console (assumes devtools is installed):
+    
+    library(devtools)
+    install_github('kentsisresearchgroup/ProteoModlR')
 
 Dependencies
 ------------
