@@ -18,9 +18,8 @@ Normalize.R - Script for data normalization
 Analyze.R - Script for calculating abundance and stoichiometry
 
 Documentation
---------
-Please refer to the PDF file on https://github.com/kentsisresearchgroup/ProteoModlR
-
+--------on
+Please refer to the PDF file in the vignettes folder
 
 Installation
 ------------
