@@ -18,7 +18,7 @@ Normalize.R - Script for data normalization
 Analyze.R - Script for calculating abundance and stoichiometry
 
 Documentation
---------on
+--------
 Please refer to the PDF file in the vignettes folder
 
 Installation
